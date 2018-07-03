@@ -5,4 +5,10 @@
     <color name="colorAccent">#FF4081</color>
 
     <color name="bottomText">#c1a5a0</color>
+
+    <color name="rippleEffectColor">#f816a463</color>
+
+    <color name="btnSignIn">#1fbad6</color>
+
+    <color name="btnRegister">#83838c</color>
 </resources>

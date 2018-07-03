@@ -48,9 +48,11 @@
         
         <Button
             android:id="@+id/btnSignIn"
+            android:background="@drawable/btn_sign_in_background"
             android:textColor="@android:color/white"
             android:text="SIGN IN"
             android:layout_marginRight="6dp"
+            android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="wrap_content" />
     </LinearLayout>
