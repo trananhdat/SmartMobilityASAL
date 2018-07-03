@@ -17,14 +17,32 @@
         android:layout_height="wrap_content"></LinearLayout>
 
     <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="22dp"
+            android:text="A S A L"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            android:textSize="36sp" />
+
+    <TextView
+        android:id="@+id/txt_rider_app"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
+        android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="22dp"
-        android:text="A S A L"
+        android:layout_marginBottom="19dp"
+        android:text="LOOKING FOR THE TRAFFIC SIGN APP?"
         android:textAlignment="center"
-        android:textColor="@android:color/white"
-        android:textSize="36sp" />
+        android:textColor="@color/bottomText" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:weightSum="2"
+
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"></LinearLayout>
 
 </RelativeLayout>
