@@ -41,8 +41,18 @@
     <LinearLayout
         android:orientation="horizontal"
         android:weightSum="2"
-
+        android:layout_above="@id/txt_rider_app"
+        android:layout_margin="16dp"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"></LinearLayout>
+        android:layout_height="wrap_content">
+        
+        <Button
+            android:id="@+id/btnSignIn"
+            android:textColor="@android:color/white"
+            android:text="SIGN IN"
+            android:layout_marginRight="6dp"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
 
 </RelativeLayout>
