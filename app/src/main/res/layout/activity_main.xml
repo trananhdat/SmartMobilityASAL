@@ -45,17 +45,16 @@
         android:layout_margin="16dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-        
+
         <Button
             android:id="@+id/btnSignIn"
             android:background="@drawable/btn_sign_in_background"
             android:textColor="@android:color/white"
             android:text="ĐĂNG NHẬP"
             android:layout_marginRight="6dp"
-            android:layout_weight="1"
             android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content" />
-
 
         <Button
             android:id="@+id/btnRegister"
@@ -63,9 +62,10 @@
             android:textColor="@color/btnRegister"
             android:text="ĐĂNG KÝ"
             android:layout_marginLeft="6dp"
-            android:layout_weight="1"
             android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content" />
+
     </LinearLayout>
 
 </RelativeLayout>
