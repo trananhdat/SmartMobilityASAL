@@ -69,6 +69,66 @@ public class MainActivity extends AppCompatActivity {
                 showRegisterDialog();
             }
         });
+
+        btnSignIn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                showLoginDialog();
+            }
+        });
+    }
+
+    private void showLoginDialog(){
+        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+        dialog.setTitle("ĐĂNG NHẬP ");
+        dialog.setMessage("Vui lòng điền email để đăng nhập");
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View login_layout = inflater.inflate(R.layout.layout_login, null);
+
+        final MaterialEditText edtEmail = login_layout.findViewById(R.id.edtEmail);
+        final MaterialEditText edtPassword = login_layout.findViewById(R.id.edtPassword);
+
+        dialog.setView(login_layout);
+
+        //set button
+        dialog.setPositiveButton("ĐĂNG NHẬP", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+
+                //check valication
+                if (TextUtils.isEmpty(edtEmail.getText().toString())) {
+                    Snackbar.make(rootLayout, "Nhập địa chỉ email", Snackbar.LENGTH_SHORT)
+                            .show();
+                    return;
+                }
+
+                if (TextUtils.isEmpty(edtPassword.getText().toString())) {
+                    Snackbar.make(rootLayout, "Nhập mật khẩu", Snackbar.LENGTH_SHORT)
+                            .show();
+                    return;
+                }
+
+                if (edtEmail.getText().toString().length() < 6) {
+                    Snackbar.make(rootLayout, "Mật khẩu quá ngắn !!!", Snackbar.LENGTH_SHORT)
+                            .show();
+                    return;
+                }
+
+                //Login
+                auth.signInWithEmailAndPassword(edtEmail.getText().toString(), edtPassword.getText().toString())
+                    .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                        @Override
+                        public void onSuccess(AuthResult authResult) {
+                            
+                        }
+                    });
+            }
+
+        });
+
+        dialog.show();
     }
 
     private void showRegisterDialog(){
@@ -95,6 +155,12 @@ public class MainActivity extends AppCompatActivity {
                 //check valication
                 if(TextUtils.isEmpty(edtEmail.getText().toString())) {
                     Snackbar.make(rootLayout, "Nhập địa chỉ email", Snackbar.LENGTH_SHORT)
+                            .show();
+                    return;
+                }
+
+                if(TextUtils.isEmpty(edtPhone.getText().toString())) {
+                    Snackbar.make(rootLayout, "Nhập SDT", Snackbar.LENGTH_SHORT)
                             .show();
                     return;
                 }
