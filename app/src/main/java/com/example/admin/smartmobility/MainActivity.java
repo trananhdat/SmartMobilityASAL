@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         //Sau khi setContentView
         CalligraphyConfig.initDefault(new CalligraphyConfig.Builder()
                                             .setDefaultFontPath("fonts/Arkhip_font.ttf")
@@ -206,7 +207,7 @@ public class MainActivity extends AppCompatActivity {
                                 user.setPassword(edtPassword.getText().toString());
 
                                 //use email to key
-                                users.child(user.getEmail())
+                                users.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
                                         .setValue(user)
                                         .addOnSuccessListener(new OnSuccessListener<Void>() {
                                             @Override
