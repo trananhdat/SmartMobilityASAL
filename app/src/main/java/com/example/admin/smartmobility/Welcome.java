@@ -89,14 +89,14 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback,
                 if(isOnline){
                     startLocationUpdates();
                     displayLocation();
-                    Snackbar.make(mapFragment.getView(), "Ban dang online", Snackbar.LENGTH_SHORT)
+                    Snackbar.make(mapFragment.getView(), "Traffic sign dang online", Snackbar.LENGTH_SHORT)
                             .show();
                 }
                 else {
                     stopLocationUpdate();
                     //if(mCurrent != null)
                     mCurrent.remove();
-                    Snackbar.make(mapFragment.getView(), "Ban dang offline", Snackbar.LENGTH_SHORT)
+                    Snackbar.make(mapFragment.getView(), "Traffic sign dang offline", Snackbar.LENGTH_SHORT)
                             .show();
                 }
             }
