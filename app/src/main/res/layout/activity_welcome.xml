@@ -13,12 +13,14 @@
         android:layout_height="match_parent"
         >
 
+
         <LinearLayout
             android:orientation="horizontal"
             android:weightSum="10"
             android:padding="16dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
+
 
             <com.github.glomadrian.materialanimatedswitch.MaterialAnimatedSwitch
                 android:id="@+id/location_switch"
@@ -33,6 +35,16 @@
                 app:ball_press_color="@android:color/white"
                 />
 
+            <!--<fragment-->
+                <!--android:id="@+id/place_autocomplete_fragment"-->
+                <!--android:name="com.google.android.gms.location.places.ui.PlaceAutocompleteFragment"-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:layout_margin="10dp"-->
+                <!--android:layout_weight="5"/>-->
+
         </LinearLayout>
+
+
     </RelativeLayout>
 </fragment>

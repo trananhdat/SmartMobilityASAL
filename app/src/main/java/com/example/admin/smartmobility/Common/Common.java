@@ -11,7 +11,7 @@ import com.example.admin.smartmobility.Remote.RetrofitClient;
  */
 
 public class Common {
-    public static final String baseURL = "https://map.googleapis.com";
+    public static final String baseURL = "https://maps.googleapis.com";
     public static IGoogleAPI getGoogleAPI(){
         return RetrofitClient.getClient(baseURL).create(IGoogleAPI.class);
     }

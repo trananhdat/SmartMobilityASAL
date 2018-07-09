@@ -1,9 +1,13 @@
 package com.example.admin.smartmobility;
 
 import android.Manifest;
+import android.animation.ValueAnimator;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 //import android.location.LocationListener;
+import com.example.admin.smartmobility.Common.Common;
+import com.example.admin.smartmobility.Remote.IGoogleAPI;
 import com.google.android.gms.location.LocationListener;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -29,23 +33,40 @@ import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
+import com.google.android.gms.location.places.ui.PlaceSelectionListener;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.JointType;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.maps.model.SquareCap;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 
 @SuppressWarnings("ALL")
@@ -79,7 +100,7 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback,
 
     //Car animation
     private List<LatLng> polyLineList;
-    private Marker pickupLocationMaker;
+    private Marker signMaker;
     private float v;
     private double lat, lng;
     private Handler handler;
@@ -87,9 +108,66 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback,
     private int index, next;
 
     private EditText edtPlace;
+    private PlaceAutocompleteFragment places;
     private String destination;
     private PolylineOptions polylineOptions, blackPolylineOptions;
-    private Polyline blacPolyline, greyPolyline;
+    private Polyline blackPolyline, greyPolyline;
+
+    private IGoogleAPI mService;
+
+
+    Runnable drawPathRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if(index < polyLineList.size() - 1){
+                index++;
+                next = index+1;
+                if (index < polyLineList.size() - 1){
+                    startPostion = polyLineList.get(index);
+                    endPosition = polyLineList.get(next);
+                }
+
+                ValueAnimator valueAnimator = ValueAnimator.ofFloat(0,1);
+                valueAnimator.setDuration(3000);
+                valueAnimator.setInterpolator(new LinearInterpolator());
+                valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                        v = valueAnimator.getAnimatedFraction();
+                        lng = v*endPosition.longitude+(1-v)*startPostion.longitude;
+                        lat = v*endPosition.latitude+(1-v)*startPostion.latitude;
+                        LatLng newPos = new LatLng(lat,lng);
+                        signMaker.setPosition(newPos);
+                        signMaker.setAnchor(0.5f, 0.5f);
+                        signMaker.setRotation(getBearing(startPostion, newPos));
+                        mMap.moveCamera(CameraUpdateFactory.newCameraPosition(
+                                new CameraPosition.Builder()
+                                .target(newPos)
+                                .zoom(15.5f)
+                                .build()
+                        ));
+                    }
+                });
+                valueAnimator.start();
+                handler.postDelayed(this, 3000);
+            }
+        }
+    };
+
+    private float getBearing(LatLng startPostion, LatLng endPosition) {
+        double lat = Math.abs(startPostion.latitude - endPosition.latitude);
+        double lng = Math.abs(startPostion.longitude - endPosition.longitude);
+
+        if(startPostion.latitude < endPosition.latitude && startPostion.longitude < endPosition.longitude)
+            return (float)(Math.toDegrees(Math.atan(lng/lat)));
+        else if (startPostion.latitude >= endPosition.latitude && startPostion.longitude < endPosition.longitude)
+            return (float)((90 - Math.toDegrees(Math.atan(lng/lat))) + 90);
+        else if (startPostion.latitude >= endPosition.latitude && startPostion.longitude >= endPosition.longitude)
+            return (float)(Math.toDegrees(Math.atan(lng/lat))+180);
+        else if(startPostion.latitude < endPosition.latitude && startPostion.longitude >= endPosition.longitude)
+            return (float)((Math.toDegrees(Math.atan(lng/lat)))+270);
+        return -1;
+    } // Deo can dung den -.-
 
 
     @Override
@@ -114,13 +192,38 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback,
                 }
                 else {
                     stopLocationUpdate();
-                    //if(mCurrent != null)
                     mCurrent.remove();
+                    mMap.clear();
+                    //handler.removeCallbacks(drawPathRunnable);
                     Snackbar.make(mapFragment.getView(), "Traffic sign dang offline", Snackbar.LENGTH_SHORT)
                             .show();
                 }
             }
         });
+
+        polyLineList = new ArrayList<>();
+        //edtPlace = (EditText)findViewById(R.id.location_switch);
+
+        //Place API
+//        places = (PlaceAutocompleteFragment)getFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
+//        places.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+//            @Override
+//            public void onPlaceSelected(Place place) {
+//                if(location_switch.isChecked() ){
+//                    destination = place.getAddress().toString();
+//                    destination = destination.replace(" ","+");
+//
+//                    getDirection();
+//                }else{
+//                    Toast.makeText(Welcome.this, "Ban phai chuyen sang che do ONLINE",Toast.LENGTH_SHORT).show();
+//                }
+//            }
+//
+//            @Override
+//            public void onError(Status status) {
+//                Toast.makeText(Welcome.this, status.toString(),Toast.LENGTH_SHORT).show();
+//            }
+//        });
 
         //Geo Fire
         signs = FirebaseDatabase.getInstance().getReference("Signs");
@@ -128,7 +231,121 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback,
 
         setUpLocation();
 
+        mService = Common.getGoogleAPI();
+
     }
+
+    private void getDirection(){
+        currentPosition = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+
+        String requestApi = null;
+        try{
+            requestApi = "https://maps/googleapis.com/maps/api/directions/json?"+
+                    "mode=driving&"+
+                    "transit_routing_preference=less_driving&"+
+                    "origin="+currentPosition.latitude+","+currentPosition.longitude+"&"+
+                    "destination="+destination+"&"+
+                    "key="+getResources().getString(R.string.google_direction_api);
+            Log.d("TAD", requestApi);//In ra UEL bi loi
+            mService.getPath(requestApi)
+                    .enqueue(new Callback<String>() {
+                        @Override
+                        public void onResponse(Call<String> call, Response<String> response) {
+                            try {
+                                JSONObject jsonObject = new JSONObject(response.body().toString());
+                                JSONArray jsonArray = jsonObject.getJSONArray("routes");
+                                for(int i=0; i<jsonArray.length();i++){
+                                    JSONObject route = jsonArray.getJSONObject(i);
+                                    JSONObject poly = route.getJSONObject("overview_polyline");
+                                    String polyline = poly.getString("points");
+                                    polyLineList = decodePoly(polyline);
+                                }
+                                //Adjusting bounds
+                                LatLngBounds.Builder builder = new LatLngBounds.Builder();
+                                for (LatLng latLng:polyLineList)
+                                    builder.include(latLng);
+                                LatLngBounds bounds = builder.build();
+                                CameraUpdate mCameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds,2);
+                                mMap.animateCamera(mCameraUpdate);
+
+                                polylineOptions = new PolylineOptions();
+                                polylineOptions.color(Color.GRAY);
+                                polylineOptions.width(5);
+                                polylineOptions.startCap(new SquareCap());
+                                polylineOptions.endCap(new SquareCap());
+                                polylineOptions.jointType(JointType.ROUND);
+                                polylineOptions.addAll(polyLineList);
+                                greyPolyline = mMap.addPolyline(polylineOptions);
+
+                                blackPolylineOptions = new PolylineOptions();
+                                blackPolylineOptions.color(Color.BLACK);
+                                blackPolylineOptions.width(5);
+                                blackPolylineOptions.startCap(new SquareCap());
+                                blackPolylineOptions.endCap(new SquareCap());
+                                blackPolylineOptions.jointType(JointType.ROUND);
+                                blackPolyline = mMap.addPolyline(blackPolylineOptions);
+
+                                mMap.addMarker(new MarkerOptions()
+                                        .position(polyLineList.get(polyLineList.size()-1))
+                                        .title("Chon vi tri"));
+
+                                signMaker = mMap.addMarker(new MarkerOptions().position(currentPosition)
+                                                .flat(true)
+                                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.traffic_sign)));
+
+                                handler = new Handler();
+                                index=-1;
+                                next = 1;
+                                handler.postDelayed(drawPathRunnable, 3000);
+
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<String> call, Throwable t) {
+                            Toast.makeText(Welcome.this,""+t.getMessage(),Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    } // Deo can dung den -.-
+
+    private List decodePoly(String encoded) {
+
+        List poly = new ArrayList();
+        int index = 0, len = encoded.length();
+        int lat = 0, lng = 0;
+
+        while (index < len) {
+            int b, shift = 0, result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lat += dlat;
+
+            shift = 0;
+            result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lng += dlng;
+
+            LatLng p = new LatLng((((double) lat / 1E5)),
+                    (((double) lng / 1E5)));
+            poly.add(p);
+        }
+
+        return poly;
+    } // Deo can dung den -.-
 
     //Press Ctr + O
     //Boi vi chung ta request runtime permission, chung ta can override OnRequestPermissionResult method
@@ -232,7 +449,6 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback,
                                                     .title("Bạn"));
                         //Move camera to  this postion
                         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitube, longitube),15.0f));
-                        //Draw animation rotate  marker
                         rotateMarker(mCurrent, -360, mMap);
                     }
                 });
@@ -240,7 +456,7 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback,
             }
         }
         else {
-            Log.d("Loi", "Khong the goi location cua ban");
+            Log.d("Loi", "Khong the tim toi vi tri cua Bien bao");
         }
     }
 
@@ -285,7 +501,7 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback,
      * installed Google Play services and returned to the app.
      */
     @Override
-    public void onMapReady(GoogleMap googleMap) {
+    public void onMapReady(GoogleMap googleMap)  {
         mMap = googleMap;
 
         mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
@@ -303,9 +519,6 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback,
         displayLocation();
     }
 
-
-
-
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         displayLocation();
@@ -314,7 +527,7 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback,
 
     @Override
     public void onConnectionSuspended(int i) {
-        mGoogleApiClient.connect(i);
+        mGoogleApiClient.connect();
     }
 
     @Override
